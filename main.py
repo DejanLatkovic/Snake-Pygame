@@ -247,7 +247,7 @@ def showStartScreen():
         degrees1 += 3 # rotate by 3 degrees each frame
         degrees2 += 7 # rotate by 7 degrees each frame
 
-#Function to terminate the program
+#Function to terminate the program..
 def terminate():
     pygame.quit()
     sys.exit()
