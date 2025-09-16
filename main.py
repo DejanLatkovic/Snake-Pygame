@@ -59,7 +59,7 @@ def main():
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
-    BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
+    BASICFONT = pygame.font.Font(None, 18)
     pygame.display.set_caption('Wormy')
 
     showStartScreen()
@@ -207,19 +207,19 @@ def drawPressKeyMsg():
 
 #Function that containts a boolean to check for any key presses from user
 def checkForKeyPress():
-    if len(pygame.event.get(QUIT)) > 0:
-        terminate()
+    for e in pygame.event.get():
+        if e.type == QUIT:
+            terminate()
+        if e.type == KEYUP:
+            if e.key == K_ESCAPE:
+                terminate()
+            return e.key
 
-    keyUpEvents = pygame.event.get(KEYUP)
-    if len(keyUpEvents) == 0:
-        return None
-    if keyUpEvents[0].key == K_ESCAPE:
-        terminate()
-    return keyUpEvents[0].key
+    return None
 
 #Function showing the start screen and any visual details
 def showStartScreen():
-    titleFont = pygame.font.Font('freesansbold.ttf', 100)
+    titleFont = pygame.font.Font(None, 100)
     titleSurf1 = titleFont.render('Wormy!', True, WHITE, DARKGREEN)
     titleSurf2 = titleFont.render('Wormy!', True, GREEN)
 
@@ -249,16 +249,18 @@ def showStartScreen():
 
 #Function to terminate the program..
 def terminate():
-    pygame.quit()
-    sys.exit()
-
+    try:        
+        pygame.quit()
+    except Exception:
+        pass
+    raise SystemExit
 #This small function sets random location to spawn the poop or the apple
 def getRandomLocation():
     return {'x': random.randint(0, CELLWIDTH - 1), 'y': random.randint(0, CELLHEIGHT - 1)}
 
 #This is the game over function that appears every time the player hits any kind of barriers
 def showGameOverScreen():
-    gameOverFont = pygame.font.Font('freesansbold.ttf', 150)
+     gameOverFont = pygame.font.Font(None, 150)
     gameSurf = gameOverFont.render('Game', True, WHITE)
     overSurf = gameOverFont.render('Over', True, WHITE)
     gameRect = gameSurf.get_rect()
