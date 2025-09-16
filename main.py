@@ -41,7 +41,19 @@ LEFT = 'left'
 RIGHT = 'right'
 
 HEAD = 0 # syntactic sugar: index of the worm's head
-
+def wait_for_start():
+    # return when user clicks OR presses any key (Esc still quits)
+    while True:
+        for e in pygame.event.get():
+            if e.type == QUIT:
+                terminate()
+            if e.type in (KEYDOWN, KEYUP):
+                if e.key == K_ESCAPE:
+                    terminate()
+                return
+            if e.type == MOUSEBUTTONDOWN:
+                return
+        pygame.time.wait(10)
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
 
@@ -189,9 +201,9 @@ def runGame():
         FPSCLOCK.tick(FPS)
 #Function to press a key 
 def drawPressKeyMsg():
-    pressKeySurf = BASICFONT.render('Press a key to play.', True, DARKGRAY)
+    pressKeySurf = BASICFONT.render('Click or press any key to play.', True, DARKGRAY)
     pressKeyRect = pressKeySurf.get_rect()
-    pressKeyRect.topleft = (WINDOWWIDTH - 200, WINDOWHEIGHT - 30)
+    pressKeyRect.topleft = (WINDOWWIDTH - 260, WINDOWHEIGHT - 30)
     DISPLAYSURF.blit(pressKeySurf, pressKeyRect)
 
 #Function that containts a boolean to check for any key presses from user
@@ -203,34 +215,33 @@ def checkForKeyPress():
             if e.key == K_ESCAPE:
                 terminate()
             return e.key
+        if e.type == MOUSEBUTTONDOWN:
+            # allow mouse click to start too
+            return "mouse"
 
     return None
 
 #Function showing the start screen and any visual details
 def showStartScreen():
-    titleFont = pygame.font.Font(None, 100)
+    titleFont  = pygame.font.Font(None, 100)
     titleSurf1 = titleFont.render('Wormy!', True, WHITE, DARKGREEN)
     titleSurf2 = titleFont.render('Wormy!', True, GREEN)
+    degrees1 = degrees2 = 0
 
-    degrees1 = 0
-    degrees2 = 0
     while True:
         DISPLAYSURF.fill(BGCOLOR)
-        rotatedSurf1 = pygame.transform.rotate(titleSurf1, degrees1)
-        rotatedRect1 = rotatedSurf1.get_rect()
-        rotatedRect1.center = (WINDOWWIDTH / 2, WINDOWHEIGHT / 2)
-        DISPLAYSURF.blit(rotatedSurf1, rotatedRect1)
-
-        rotatedSurf2 = pygame.transform.rotate(titleSurf2, degrees2)
-        rotatedRect2 = rotatedSurf2.get_rect()
-        rotatedRect2.center = (WINDOWWIDTH / 2, WINDOWHEIGHT / 2)
-        DISPLAYSURF.blit(rotatedSurf2, rotatedRect2)
-
+        r1 = pygame.transform.rotate(titleSurf1, degrees1)
+        r2 = pygame.transform.rotate(titleSurf2, degrees2)
+        DISPLAYSURF.blit(r1, r1.get_rect(center=(WINDOWWIDTH//2,  WINDOWHEIGHT//2)))
+        DISPLAYSURF.blit(r2, r2.get_rect(center=(WINDOWWIDTH//2,  WINDOWHEIGHT//2)))
         drawPressKeyMsg()
+        pygame.display.update()
+        FPSCLOCK.tick(FPS)
 
-        if checkForKeyPress():
-            pygame.event.get() # clear event queue
-            return
+        # Wait here until we get a click or a key, then leave the start screen.
+        wait_for_start()
+        pygame.event.get()  # clear any leftovers
+        return
         pygame.display.update()
         FPSCLOCK.tick(FPS)
         degrees1 += 3 # rotate by 3 degrees each frame
