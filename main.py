@@ -2,6 +2,8 @@
 # By Al Sweigart al@inventwithpython.com
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
+import os
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"  # optional: hides pygame banner
 
 import random, pygame, sys
 from pygame.locals import *
@@ -48,8 +50,18 @@ def main():
 
     pygame.display.init()
     pygame.font.init()
-    FPSCLOCK = pygame.time.Clock()
-    DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
+
+    # Completely disable audio so the browser doesn't block on "user gesture"
+    try:
+        pygame.mixer.quit()  # if mixer autoinit'd, close it
+    except Exception:
+        pass
+
+    # Use SCALED so the browser’s canvas and your window size play nicely
+    DISPLAYSURF = pygame.display.set_mode(
+        (WINDOWWIDTH, WINDOWHEIGHT), pygame.SCALED, vsync=1
+    )
+
     BASICFONT = pygame.font.Font(None, 18)
     pygame.display.set_caption('Wormy')
 
