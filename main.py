@@ -5,6 +5,7 @@
 
 import random, pygame, sys
 from pygame.locals import *
+HAS_TOUCH = hasattr(pygame, "FINGERDOWN")
 
 FPS = 15
 WINDOWWIDTH = 1000
@@ -199,36 +200,43 @@ def wait_for_start():
     """Return when user clicks, taps, or presses any key (Esc still quits)."""
     while True:
         for e in pygame.event.get():
-            if e.type == QUIT:
+            if e.type == pygame.QUIT:
                 terminate()
 
             # Keyboard
-            if e.type in (KEYDOWN, KEYUP):
-                if getattr(e, "key", None) == K_ESCAPE:
+            if e.type in (pygame.KEYDOWN, pygame.KEYUP):
+                if getattr(e, "key", None) == pygame.K_ESCAPE:
                     terminate()
                 return
 
-            # Mouse / touch on web
-            if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP):
-                return
-            if e.type in (FINGERDOWN, FINGERUP):  # touch screens
+            # Mouse
+            if e.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
                 return
 
-        # Be nice to the browser event loop
+            # Touch (only if supported in this build)
+            if HAS_TOUCH and e.type in (pygame.FINGERDOWN, pygame.FINGERUP):
+                return
+
         pygame.time.wait(10)
 
 
 def checkForKeyPress():
     """Used on Game Over screen; accept key, click, or tap."""
     for e in pygame.event.get():
-        if e.type == QUIT:
+        if e.type == pygame.QUIT:
             terminate()
-        if e.type in (KEYDOWN, KEYUP):
-            if getattr(e, "key", None) == K_ESCAPE:
+
+        if e.type in (pygame.KEYDOWN, pygame.KEYUP):
+            if getattr(e, "key", None) == pygame.K_ESCAPE:
                 terminate()
             return e.key or True
-        if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP, FINGERDOWN, FINGERUP):
+
+        if e.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
             return True
+
+        if HAS_TOUCH and e.type in (pygame.FINGERDOWN, pygame.FINGERUP):
+            return True
+
     return None
 
 #Function showing the start screen and any visual details
