@@ -33,13 +33,25 @@ HAS_TOUCH = hasattr(pygame, "FINGERDOWN")
 
 # ---- Boot / main loop -------------------------------------------------------
 def main():
-    # pygame-web works best if we keep things simple
-    pygame.init()
-    # shut off audio completely so the browser doesn't require a user gesture
+    global FPSCLOCK, DISPLAYSURF, BASICFONT
+
+    pygame.display.init()
+    pygame.font.init()
     try:
-        pygame.mixer.quit()
+        pygame.mixer.quit()   # avoid the browser's audio gate
     except Exception:
         pass
+
+    DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT), pygame.SCALED)
+    BASICFONT = pygame.font.Font(None, 18)
+    pygame.display.set_caption('Wormy')
+
+    FPSCLOCK = pygame.time.Clock()
+
+    showStartScreen()
+    while True:
+        runGame()
+        showGameOverScreen()
 
     global DISPLAYSURF, BASICFONT, FPSCLOCK
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT), pygame.SCALED)
