@@ -1,58 +1,74 @@
-# Minimal, web-ready pygame demo; no audio; works in pygbag bundle.
-import asyncio, os, pygame
+import sys, time, platform
+import pygame
 
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+# ---- minimal init (works in browser & desktop) ----
+pygame.display.init()
+pygame.font.init()
 
-WIDTH, HEIGHT = 1000, 800
-FPS = 60
-BLACK = (0, 0, 0)
-GREEN = (0, 220, 0)
+W, H = 960, 540
+screen = pygame.display.set_mode((W, H), pygame.SCALED)  # browser-friendly
+clock = pygame.time.Clock()
+font_big  = pygame.font.Font(None, 48)
+font_small = pygame.font.Font(None, 28)
 
-async def wait_for_any_input(screen, clock, font):
-    text = font.render("Ready to start !", True, (40, 40, 255))
-    pad = 22
-    box = pygame.Surface((text.get_width()+pad*2, text.get_height()+pad))
-    box.fill(GREEN); pygame.draw.rect(box, BLACK, box.get_rect(), 8)
-    box.blit(text, (pad, (box.get_height()-text.get_height())//2))
-    rect = box.get_rect(center=(WIDTH//2, HEIGHT//2))
-    while True:
-        screen.fill((24,24,24)); screen.blit(box, rect); pygame.display.flip()
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT: raise SystemExit
-            if e.type in (pygame.KEYDOWN, pygame.KEYUP, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
-                return
-        clock.tick(FPS); await asyncio.sleep(0)
+t0 = time.time()
+x, y = 100, 100
+vx, vy = 3, 2
 
-async def game(screen, clock):
-    # just move a square to prove it renders
-    x, y, vx, vy = 100, 100, 4, 3
-    while True:
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT: raise SystemExit
-            if e.type == pygame.KEYDOWN and e.key in (pygame.K_ESCAPE, pygame.K_q):
-                return
-        x += vx; y += vy
-        if x<0 or x>WIDTH-60: vx = -vx
-        if y<0 or y>HEIGHT-60: vy = -vy
-        screen.fill(BLACK)
-        pygame.draw.rect(screen, GREEN, (x, y, 60, 60))
-        pygame.display.flip()
-        clock.tick(FPS); await asyncio.sleep(0)
-
-async def main_async():
-    pygame.display.init(); pygame.font.init()
-    try: pygame.mixer.quit()   # make sure audio is fully disabled
-    except Exception: pass
-    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED)
-    pygame.display.set_caption("Pygame Web Test")
-    clock = pygame.time.Clock(); font = pygame.font.Font(None, 64)
-    while True:
-        await wait_for_any_input(screen, clock, font)
-        await game(screen, clock)
+def draw_hud():
+    lines = [
+        "SMOKE TEST — If you see this, render & events are OK",
+        f"Python: {platform.python_version()}    pygame: {pygame.version.ver}",
+        "Keys: arrows move box, ESC quits (desktop); click/tap does nothing here",
+    ]
+    yy = 10
+    for line in lines:
+        surf = font_small.render(line, True, (230, 230, 230))
+        screen.blit(surf, (10, yy))
+        yy += 26
 
 def main():
-    try: asyncio.run(main_async())
-    except SystemExit: pass
+    global x, y, vx, vy
+    running = True
+    while running:
+        # ---- events ----
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                running = False
+            elif e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                # (ESC won’t exit in the browser; that’s OK)
+                running = False
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:  x -= 5
+        if keys[pygame.K_RIGHT]: x += 5
+        if keys[pygame.K_UP]:    y -= 5
+        if keys[pygame.K_DOWN]:  y += 5
+
+        # ---- simple animation ----
+        x += vx
+        y += vy
+        if x < 0 or x > W - 80: vx = -vx
+        if y < 0 or y > H - 80: vy = -vy
+
+        # ---- draw ----
+        screen.fill((0, 0, 0))
+        pygame.draw.rect(screen, (40, 40, 40), (0, 0, W, 70))
+        draw_hud()
+        pygame.draw.rect(screen, (5, 200, 90), (x, y, 80, 80))
+
+        # FPS in corner
+        fps = font_small.render(f"{int(clock.get_fps())} FPS", True, (220, 220, 220))
+        screen.blit(fps, (W-100, 10))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    # graceful quit (no-op in browser)
+    try:
+        pygame.quit()
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     main()
