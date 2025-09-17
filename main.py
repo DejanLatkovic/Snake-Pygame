@@ -216,20 +216,40 @@
 # if __name__ == '__main__':
 #     main()
 
-import sys, time, pygame
-print("booting python", sys.version); sys.stdout.flush()
+# main.py — pygame-web smoke test
+import asyncio, pygame
 
-pygame.init()
-screen = pygame.display.set_mode((800, 600), pygame.SCALED)
-font   = pygame.font.Font(None, 48)
-t0 = time.time()
+WIDTH, HEIGHT = 1000, 800
 
-while True:
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT: raise SystemExit
-    t = time.time() - t0
-    screen.fill((20, 20, 20))
-    txt = font.render(f"pygbag alive {t:0.1f}s", True, (200, 255, 200))
-    screen.blit(txt, (20, 20))
-    pygame.display.flip()
-    pygame.time.wait(16)
+async def main():
+    pygame.display.init()
+    pygame.font.init()
+    # SCALED helps on web; no audio init at all
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED)
+    pygame.display.set_caption("pygbag smoke test")
+    clock = pygame.time.Clock()
+    font = pygame.font.Font(None, 36)
+
+    t = 0
+    running = True
+    while running:
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                running = False
+            elif e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                running = False
+
+        t += 1
+        # simple animation + FPS text
+        screen.fill(((t // 2) % 255, 40, 90))
+        txt = font.render(f"Ticks: {t}  FPS: {int(clock.get_fps())}", True, (255, 255, 255))
+        screen.blit(txt, (20, 20))
+        pygame.display.flip()
+        clock.tick(60)
+        # CRUCIAL on web: yield each frame
+        await asyncio.sleep(0)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    asyncio.run(main())
