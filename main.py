@@ -46,7 +46,8 @@ HEAD = 0 # syntactic sugar: index of the worm's head
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
 
-    pygame.init()
+    pygame.display.init()
+    pygame.font.init()
     FPSCLOCK = pygame.time.Clock()
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
     BASICFONT = pygame.font.Font(None, 18)
@@ -56,6 +57,20 @@ def main():
     while True:
         runGame()
         showGameOverScreen()
+
+audio_inited = False
+def init_sound_if_possible():
+    """Try to initialize audio after a user gesture. Ignore failures."""
+    global audio_inited
+    if audio_inited:
+        return
+    try:
+        # This only works after a click/tap/key in the browser
+        pygame.mixer.init()
+        audio_inited = True
+    except Exception:
+        # On web, this can still fail; don’t crash the game
+        pass
 
 
 def runGame():
@@ -197,24 +212,19 @@ def drawPressKeyMsg():
 
 #Function that containts a boolean to check for any key presses from user
 def wait_for_start():
-    """Return when user clicks, taps, or presses any key (Esc still quits)."""
     while True:
         for e in pygame.event.get():
-            if e.type == pygame.QUIT:
+            if e.type == QUIT:
                 terminate()
 
-            # Keyboard
-            if e.type in (pygame.KEYDOWN, pygame.KEYUP):
-                if getattr(e, "key", None) == pygame.K_ESCAPE:
+            if e.type in (KEYDOWN, KEYUP):
+                if getattr(e, "key", None) == K_ESCAPE:
                     terminate()
+                init_sound_if_possible()   # <-- add
                 return
 
-            # Mouse
-            if e.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
-                return
-
-            # Touch (only if supported in this build)
-            if HAS_TOUCH and e.type in (pygame.FINGERDOWN, pygame.FINGERUP):
+            if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP, FINGERDOWN, FINGERUP):
+                init_sound_if_possible()   # <-- add
                 return
 
         pygame.time.wait(10)
