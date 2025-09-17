@@ -41,19 +41,7 @@ LEFT = 'left'
 RIGHT = 'right'
 
 HEAD = 0 # syntactic sugar: index of the worm's head
-def wait_for_start():
-    # return when user clicks OR presses any key (Esc still quits)
-    while True:
-        for e in pygame.event.get():
-            if e.type == QUIT:
-                terminate()
-            if e.type in (KEYDOWN, KEYUP):
-                if e.key == K_ESCAPE:
-                    terminate()
-                return
-            if e.type == MOUSEBUTTONDOWN:
-                return
-        pygame.time.wait(10)
+
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
 
@@ -207,18 +195,40 @@ def drawPressKeyMsg():
     DISPLAYSURF.blit(pressKeySurf, pressKeyRect)
 
 #Function that containts a boolean to check for any key presses from user
+def wait_for_start():
+    """Return when user clicks, taps, or presses any key (Esc still quits)."""
+    while True:
+        for e in pygame.event.get():
+            if e.type == QUIT:
+                terminate()
+
+            # Keyboard
+            if e.type in (KEYDOWN, KEYUP):
+                if getattr(e, "key", None) == K_ESCAPE:
+                    terminate()
+                return
+
+            # Mouse / touch on web
+            if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP):
+                return
+            if e.type in (FINGERDOWN, FINGERUP):  # touch screens
+                return
+
+        # Be nice to the browser event loop
+        pygame.time.wait(10)
+
+
 def checkForKeyPress():
+    """Used on Game Over screen; accept key, click, or tap."""
     for e in pygame.event.get():
         if e.type == QUIT:
             terminate()
-        if e.type == KEYUP:
-            if e.key == K_ESCAPE:
+        if e.type in (KEYDOWN, KEYUP):
+            if getattr(e, "key", None) == K_ESCAPE:
                 terminate()
-            return e.key
-        if e.type == MOUSEBUTTONDOWN:
-            # allow mouse click to start too
-            return "mouse"
-
+            return e.key or True
+        if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP, FINGERDOWN, FINGERUP):
+            return True
     return None
 
 #Function showing the start screen and any visual details
