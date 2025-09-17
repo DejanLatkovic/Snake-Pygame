@@ -12,7 +12,6 @@ Snake-Pygame-main/
 │
 ├── assets/            # Images, sounds, or fonts used in the game
 ├── main.py            # Entry point of the game
-├── modules/           # Additional game logic and helper functions
 └── README.md          # Project documentation
 ```
 
