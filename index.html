@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wormy (pygbag)</title>
+  <style>
+    html,body{margin:0;height:100%;background:#7f7f7f;}
+    #canvas{display:block;margin:auto;outline:none;}
+  </style>
+
+  <!-- Force the correct pygbag CDN and disable audio -->
+  <script>
+    window.pygbag = {
+      cdn: "https://pygame-web.github.io/archives/0.9/",
+      ume_block: 1,   // don’t auto-open popup
+      can_close: 0,
+      audio: 0
+    };
+  </script>
+
+  <!-- This is the ONLY loader you need. Note the /archives/0.9/ path -->
+  <script src="https://pygame-web.github.io/archives/0.9/pythons.js"></script>
+</head>
+<body>
+  <!-- pygbag will use this canvas -->
+  <canvas id="canvas" tabindex="1"></canvas>
+
+  <!-- Your game -->
+  <script type="text/python" id="__main__" src="main.py"></script>
+</body>
+</html>
