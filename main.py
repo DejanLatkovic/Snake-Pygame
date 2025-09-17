@@ -1,54 +1,115 @@
-# Wormy (web-friendly)
-import os, random, pygame, sys
+import os, sys, random, pygame
 from pygame.locals import *
 
-# turn off the pygame “Hello” line
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
-
-FPS         = 15
-WINDOWWIDTH = 1000
-WINDOWHEIGHT= 800
-CELLSIZE    = 20
-CELLWIDTH   = WINDOWWIDTH // CELLSIZE
-CELLHEIGHT  = WINDOWHEIGHT // CELLSIZE
+# ---- constants ----
+FPS = 15
+WINDOWWIDTH, WINDOWHEIGHT = 1000, 800
+CELLSIZE = 20
+CELLWIDTH  = WINDOWWIDTH  // CELLSIZE
+CELLHEIGHT = WINDOWHEIGHT // CELLSIZE
 
 WHITE=(255,255,255); BLACK=(0,0,0); RED=(255,0,0)
 GREEN=(0,255,0); DARKGREEN=(0,155,0); DARKGRAY=(40,40,40)
 BROWN=(150,75,0); GOLD=(255,215,0)
-BGCOLOR=BLACK
-UP,DOWN,LEFT,RIGHT='up','down','left','right'
-HEAD=0
+BGCOLOR = BLACK
 
-def main():
-    global DISPLAYSURF, BASICFONT, FPSCLOCK
+UP='up'; DOWN='down'; LEFT='left'; RIGHT='right'
+HEAD = 0
 
-    # Init only what we need; mixer intentionally off for web
-    pygame.display.init()
-    pygame.font.init()
-    try:
-        pygame.mixer.quit()  # make sure audio is really off
-    except Exception:
-        pass
+# globals pygame needs
+FPSCLOCK = None
+DISPLAYSURF = None
+BASICFONT = None
 
-    # >>> THIS WAS MISSING <<<
-    FPSCLOCK = pygame.time.Clock()
+def log(msg):  # prints to pygbag overlay + DevTools console
+    print(msg); sys.stdout.flush()
 
-    # Scaled canvas works well in browsers
+def init_pygame():
+    global FPSCLOCK, DISPLAYSURF, BASICFONT
+    pygame.init()  # safe on web
+    # keep it simple: no vsync flag
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT), pygame.SCALED)
-    BASICFONT = pygame.font.Font(None, 18)
-    pygame.display.set_caption('Wormy')
+    pygame.display.set_caption('Wormy (web)')
+    BASICFONT = pygame.font.Font(None, 24)
+    FPSCLOCK = pygame.time.Clock()    # <- the one that was missing in some edits
+    log("pygame initialized")
 
-    showStartScreen()
+def drawGrid():
+    for x in range(0, WINDOWWIDTH, CELLSIZE):
+        pygame.draw.line(DISPLAYSURF, DARKGRAY, (x, 0), (x, WINDOWHEIGHT))
+    for y in range(0, WINDOWHEIGHT, CELLSIZE):
+        pygame.draw.line(DISPLAYSURF, DARKGRAY, (0, y), (WINDOWWIDTH, y))
+
+def drawWorm(worm):
+    for seg in worm:
+        x = seg['x'] * CELLSIZE
+        y = seg['y'] * CELLSIZE
+        pygame.draw.rect(DISPLAYSURF, DARKGREEN, (x, y, CELLSIZE, CELLSIZE))
+        pygame.draw.rect(DISPLAYSURF, GREEN, (x+4, y+4, CELLSIZE-8, CELLSIZE-8))
+
+def drawApple(coord):
+    x = coord['x'] * CELLSIZE
+    y = coord['y'] * CELLSIZE
+    pygame.draw.rect(DISPLAYSURF, RED, (x, y, CELLSIZE, CELLSIZE))
+
+def drawPoop(coord):
+    x = coord['x'] * CELLSIZE
+    y = coord['y'] * CELLSIZE
+    pygame.draw.rect(DISPLAYSURF, BROWN, (x, y, CELLSIZE, CELLSIZE))
+
+def drawgoldapple(coord):
+    x = coord['x'] * CELLSIZE
+    y = coord['y'] * CELLSIZE
+    pygame.draw.rect(DISPLAYSURF, GOLD, (x, y, CELLSIZE, CELLSIZE))
+
+def drawScore(score):
+    surf = BASICFONT.render(f"Score: {score}", True, WHITE)
+    rect = surf.get_rect()
+    rect.topleft = (WINDOWWIDTH - 140, 10)
+    DISPLAYSURF.blit(surf, rect)
+
+def getRandomLocation():
+    return {'x': random.randint(0, CELLWIDTH-1), 'y': random.randint(0, CELLHEIGHT-1)}
+
+def wait_for_start():
+    # accept click or any key
     while True:
-        runGame()
-        showGameOverScreen()
+        for e in pygame.event.get():
+            if e.type == QUIT:
+                pygame.quit(); raise SystemExit
+            if e.type in (KEYDOWN, KEYUP):
+                if getattr(e, "key", None) == K_ESCAPE:
+                    pygame.quit(); raise SystemExit
+                log("start: key"); return
+            if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP):
+                log("start: mouse"); return
+        pygame.time.wait(10)
+
+def showStartScreen():
+    titleFont  = pygame.font.Font(None, 100)
+    titleSurf1 = titleFont.render('Wormy!', True, WHITE, DARKGREEN)
+    titleSurf2 = titleFont.render('Wormy!', True, GREEN)
+
+    DISPLAYSURF.fill((127,127,127))
+    # button-like text:
+    msg = pygame.font.Font(None, 72).render("Ready to start !", True, (30,40,255))
+    msg_rect = msg.get_rect(center=(WINDOWWIDTH//2, WINDOWHEIGHT//2))
+    pad_rect = msg_rect.inflate(600, 40)
+    pygame.draw.rect(DISPLAYSURF, (30,30,30), pad_rect, 6)
+    pygame.draw.rect(DISPLAYSURF, (0,230,0), pad_rect)
+    DISPLAYSURF.blit(msg, msg_rect)
+    pygame.display.update()
+
+    wait_for_start()
+    log("leaving start screen")
 
 def runGame():
+    log("game loop BEGIN")
     startx = random.randint(5, CELLWIDTH - 6)
     starty = random.randint(5, CELLHEIGHT - 6)
-    wormCoords = [{'x': startx, 'y': starty},
-                  {'x': startx - 1, 'y': starty},
-                  {'x': startx - 2, 'y': starty}]
+    worm = [{'x': startx, 'y': starty},
+            {'x': startx-1, 'y': starty},
+            {'x': startx-2, 'y': starty}]
     direction = RIGHT
 
     apple = getRandomLocation()
@@ -57,166 +118,100 @@ def runGame():
     count_g = 0
 
     while True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                terminate()
-            elif event.type == KEYDOWN:
-                if (event.key in (K_LEFT, K_a)) and direction != RIGHT: direction = LEFT
-                elif (event.key in (K_RIGHT, K_d)) and direction != LEFT: direction = RIGHT
-                elif (event.key in (K_UP, K_w)) and direction != DOWN: direction = UP
-                elif (event.key in (K_DOWN, K_s)) and direction != UP: direction = DOWN
-                elif event.key == K_ESCAPE: terminate()
+        for e in pygame.event.get():
+            if e.type == QUIT:
+                pygame.quit(); raise SystemExit
+            if e.type == KEYDOWN:
+                if (e.key in (K_LEFT, K_a)) and direction != RIGHT:  direction = LEFT
+                elif (e.key in (K_RIGHT, K_d)) and direction != LEFT: direction = RIGHT
+                elif (e.key in (K_UP, K_w)) and direction != DOWN:    direction = UP
+                elif (e.key in (K_DOWN, K_s)) and direction != UP:    direction = DOWN
+                elif e.key == K_ESCAPE:
+                    pygame.quit(); raise SystemExit
 
-        # edge / self collision
-        hx, hy = wormCoords[HEAD]['x'], wormCoords[HEAD]['y']
-        if hx < 0 or hx >= CELLWIDTH or hy < 0 or hy >= CELLHEIGHT: return
-        for body in wormCoords[1:]:
-            if body['x'] == hx and body['y'] == hy: return
+        # borders or self
+        if (worm[HEAD]['x'] < 0 or worm[HEAD]['x'] >= CELLWIDTH or
+            worm[HEAD]['y'] < 0 or worm[HEAD]['y'] >= CELLHEIGHT):
+            log("hit wall -> game over"); return
+        for body in worm[1:]:
+            if body['x'] == worm[HEAD]['x'] and body['y'] == worm[HEAD]['y']:
+                log("hit self -> game over"); return
 
-        # eat apple => drop poop at tail
-        if hx == apple['x'] and hy == apple['y']:
-            poop.append(wormCoords[-1])
+        # poop barrier when eating apple
+        if worm[HEAD]['x'] == apple['x'] and worm[HEAD]['y'] == apple['y']:
+            poop.append(worm[-1])
 
-        # hit poop => game over
-        for p in poop:
-            if hx == p['x'] and hy == p['y']: return
+        for item in poop:
+            if worm[HEAD]['x'] == item['x'] and worm[HEAD]['y'] == item['y']:
+                log("hit poop -> game over"); return
 
-        # golden apple appears after 10 poop
         if len(poop) >= 10 and count_g == 0:
             count_g = 1
             gold = getRandomLocation()
-        if hx == gold['x'] and hy == gold['y']:
+
+        if worm[HEAD]['x'] == gold['x'] and worm[HEAD]['y'] == gold['y']:
             gold = {'x': -1, 'y': -1}
             poop = [{'x': -2, 'y': -1}]
             count_g = 0
 
-        # handle apple/gold spawn safety, else move (drop tail)
-        if hx == apple['x'] and hy == apple['y']:
+        # eat / move
+        if worm[HEAD]['x'] == apple['x'] and worm[HEAD]['y'] == apple['y']:
             apple = getRandomLocation()
             safe = False
             while not safe:
                 safe = True
-                for item in poop:
-                    if item == apple:
-                        apple = getRandomLocation()
-                        safe = False
-                        break
-                if gold == apple:
-                    apple = getRandomLocation()
-                    safe = False
+                for item in poop + [gold]:
+                    if item['x'] == apple['x'] and item['y'] == apple['y']:
+                        apple = getRandomLocation(); safe = False; break
         else:
-            del wormCoords[-1]
+            del worm[-1]
 
-        # move head
-        if direction == UP:    newHead={'x': hx,     'y': hy-1}
-        elif direction == DOWN:newHead={'x': hx,     'y': hy+1}
-        elif direction == LEFT:newHead={'x': hx-1,   'y': hy}
-        else:                  newHead={'x': hx+1,   'y': hy}
-        wormCoords.insert(0, newHead)
+        # advance head
+        if direction == UP:    new = {'x': worm[HEAD]['x'],     'y': worm[HEAD]['y']-1}
+        if direction == DOWN:  new = {'x': worm[HEAD]['x'],     'y': worm[HEAD]['y']+1}
+        if direction == LEFT:  new = {'x': worm[HEAD]['x']-1,   'y': worm[HEAD]['y']}
+        if direction == RIGHT: new = {'x': worm[HEAD]['x']+1,   'y': worm[HEAD]['y']}
+        worm.insert(0, new)
 
         # draw
         DISPLAYSURF.fill(BGCOLOR)
-        drawGrid(); drawWorm(wormCoords); drawApple(apple); drawgoldapple(gold)
+        drawGrid(); drawWorm(worm); drawApple(apple); drawgoldapple(gold)
         for item in poop: drawPoop(item)
-        drawScore(len(wormCoords)-3)
-        pygame.display.flip()
+        drawScore(len(worm)-3)
+        pygame.display.update()
         FPSCLOCK.tick(FPS)
 
-def drawPressKeyMsg():
-    surf = BASICFONT.render('Click or press any key to play.', True, DARKGRAY)
-    rect = surf.get_rect()
-    rect.topleft = (WINDOWWIDTH - 260, WINDOWHEIGHT - 30)
-    DISPLAYSURF.blit(surf, rect)
-
-def wait_for_start():
-    while True:
-        for e in pygame.event.get():
-            if e.type == QUIT: terminate()
-            if e.type in (KEYDOWN, KEYUP):
-                if getattr(e, "key", None) == K_ESCAPE: terminate()
-                return
-            if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP):
-                return
-        pygame.time.wait(10)
-
-def showStartScreen():
-    titleFont = pygame.font.Font(None, 100)
-    t1 = titleFont.render('Wormy!', True, WHITE, DARKGREEN)
-    t2 = titleFont.render('Wormy!', True, GREEN)
-    deg1 = deg2 = 0
-
-    while True:
-        DISPLAYSURF.fill(BGCOLOR)
-        r1 = pygame.transform.rotate(t1, deg1); DISPLAYSURF.blit(r1, r1.get_rect(center=(WINDOWWIDTH//2, WINDOWHEIGHT//2)))
-        r2 = pygame.transform.rotate(t2, deg2); DISPLAYSURF.blit(r2, r2.get_rect(center=(WINDOWWIDTH//2, WINDOWHEIGHT//2)))
-        drawPressKeyMsg()
-        pygame.display.flip()
-
-        wait_for_start()
-        pygame.event.get()
-        return
-
-def terminate():
-    try: pygame.quit()
-    except Exception: pass
-    raise SystemExit
-
-def getRandomLocation():
-    return {'x': random.randint(0, CELLWIDTH-1), 'y': random.randint(0, CELLHEIGHT-1)}
-
 def showGameOverScreen():
-    font = pygame.font.Font(None, 150)
-    g = font.render('Game', True, WHITE); o = font.render('Over', True, WHITE)
-    gr = g.get_rect(); or_ = o.get_rect()
-    gr.midtop = (WINDOWWIDTH//2, 10)
-    or_.midtop = (WINDOWWIDTH//2, gr.height + 35)
-    DISPLAYSURF.blit(g, gr); DISPLAYSURF.blit(o, or_)
-    drawPressKeyMsg(); pygame.display.flip()
+    f = pygame.font.Font(None, 150)
+    s1 = f.render('Game', True, WHITE)
+    s2 = f.render('Over', True, WHITE)
+    r1 = s1.get_rect(midtop=(WINDOWWIDTH//2, 10))
+    r2 = s2.get_rect(midtop=(WINDOWWIDTH//2, r1.height + 35))
+    DISPLAYSURF.blit(s1, r1); DISPLAYSURF.blit(s2, r2)
+    pygame.display.update()
     pygame.time.wait(500)
+    # wait for any key or click
     while True:
-        if checkForKeyPress():
-            pygame.event.get()
-            return
+        e = pygame.event.wait()
+        if e.type in (KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP):
+            pygame.event.get(); return
+        if e.type == QUIT:
+            pygame.quit(); raise SystemExit
 
-def checkForKeyPress():
-    for e in pygame.event.get():
-        if e.type == QUIT: terminate()
-        if e.type in (KEYDOWN, KEYUP):
-            if getattr(e, "key", None) == K_ESCAPE: terminate()
-            return True
-        if e.type in (MOUSEBUTTONDOWN, MOUSEBUTTONUP):
-            return True
-    return None
-
-def drawScore(score):
-    s = BASICFONT.render(f'Score: {score}', True, WHITE)
-    r = s.get_rect(); r.topleft = (WINDOWWIDTH-120, 10)
-    DISPLAYSURF.blit(s, r)
-
-def drawWorm(coords):
-    colours = [(0,0,139),(231,84,128),(155,135,12),(48,25,52),(0,155,0)]
-    for c in coords:
-        x, y = c['x']*CELLSIZE, c['y']*CELLSIZE
-        outer = random.choice(colours)
-        inner = (0,0,255) if outer==(0,0,139) else (255,192,203) if outer==(231,84,128) else (250,253,15) if outer==(155,135,12) else (106,13,173) if outer==(48,25,52) else (0,255,0)
-        pygame.draw.rect(DISPLAYSURF, outer, pygame.Rect(x,y,CELLSIZE,CELLSIZE))
-        pygame.draw.rect(DISPLAYSURF, inner, pygame.Rect(x+4,y+4,CELLSIZE-8,CELLSIZE-8))
-
-def drawApple(c):
-    pygame.draw.rect(DISPLAYSURF, RED, pygame.Rect(c['x']*CELLSIZE, c['y']*CELLSIZE, CELLSIZE, CELLSIZE))
-
-def drawPoop(c):
-    pygame.draw.rect(DISPLAYSURF, BROWN, pygame.Rect(c['x']*CELLSIZE, c['y']*CELLSIZE, CELLSIZE, CELLSIZE))
-
-def drawgoldapple(c):
-    pygame.draw.rect(DISPLAYSURF, GOLD, pygame.Rect(c['x']*CELLSIZE, c['y']*CELLSIZE, CELLSIZE, CELLSIZE))
-
-def drawGrid():
-    for x in range(0, WINDOWWIDTH, CELLSIZE):
-        pygame.draw.line(DISPLAYSURF, DARKGRAY, (x, 0), (x, WINDOWHEIGHT))
-    for y in range(0, WINDOWHEIGHT, CELLSIZE):
-        pygame.draw.line(DISPLAYSURF, DARKGRAY, (0, y), (WINDOWWIDTH, y))
+def main():
+    try:
+        init_pygame()
+        showStartScreen()
+        while True:
+            runGame()
+            showGameOverScreen()
+    except SystemExit:
+        raise
+    except Exception as ex:
+        # make sure we see any crash reason
+        log(f"ERROR: {ex!r}")
+        pygame.quit()
+        raise
 
 if __name__ == '__main__':
     main()
-
