@@ -3,34 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>pygbag test</title>
-  <style>html,body{margin:0;height:100%;background:#7f7f7f}#canvas{display:block;margin:auto;outline:none}</style>
+  <title>Wormy (pygbag)</title>
+  <style>
+    html,body{margin:0;height:100%;background:#7f7f7f;}
+    #canvas{display:block;margin:auto;outline:none;}
+  </style>
+
+  <!-- Configure pygbag (use the 0.9 CDN and disable audio/popups) -->
   <script>
     window.pygbag = {
       cdn: "https://pygame-web.github.io/archives/0.9/",
-      ume_block: 1,
+      ume_block: 1, // do not auto-open the console window
       can_close: 0,
-      audio: 0
+      audio: 0     // important: no audio, avoids user-gesture gate
     };
   </script>
+
+  <!-- Loader (the only script you need) -->
   <script src="https://pygame-web.github.io/archives/0.9/pythons.js"></script>
 </head>
 <body>
   <canvas id="canvas" tabindex="1"></canvas>
-  <script type="text/python" id="__main__">
-import pygame, sys
-pygame.display.init(); pygame.font.init()
-screen = pygame.display.set_mode((640,480), pygame.SCALED)
-pygame.display.set_caption("It works!")
-font = pygame.font.Font(None, 72)
-text = font.render("It works!", True, (255,255,255))
-rect = text.get_rect(center=screen.get_rect().center)
-clock = pygame.time.Clock()
-while True:
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT: sys.exit()
-    screen.fill((30,30,30)); screen.blit(text, rect)
-    pygame.display.flip(); clock.tick(30)
-  </script>
+
+  <!-- Your game -->
+  <script type="text/python" id="__main__" src="main.py"></script>
 </body>
 </html>
