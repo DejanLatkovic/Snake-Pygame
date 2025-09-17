@@ -55,7 +55,7 @@ You can showcase the game by adding a screenshot.
 Place your screenshot image in the project root or inside the `assets/` folder, then link it here:
 
 ```markdown
-![Snake Game Screenshot](assets/screenshot.png)
+![Snake Game Screenshot](assets/screenshot.jpg)
 ```
 
 (Replace `assets/screenshot.png` with the path to your actual screenshot file.)
