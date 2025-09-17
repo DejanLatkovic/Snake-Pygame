@@ -217,20 +217,19 @@
 #     main()
 
 # main.py — pygame-web smoke test
-import asyncio, pygame
+# main.py — red screen test for pygame-web
 
-WIDTH, HEIGHT = 1000, 800
+
+
+import asyncio, pygame
 
 async def main():
     pygame.display.init()
     pygame.font.init()
-    # SCALED helps on web; no audio init at all
-    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED)
-    pygame.display.set_caption("pygbag smoke test")
-    clock = pygame.time.Clock()
-    font = pygame.font.Font(None, 36)
+    # No audio on the web unless you handle user-gesture gating; skip it entirely
+    screen = pygame.display.set_mode((640, 480), pygame.SCALED)
+    pygame.display.set_caption("pygame-web red test")
 
-    t = 0
     running = True
     while running:
         for e in pygame.event.get():
@@ -239,13 +238,10 @@ async def main():
             elif e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                 running = False
 
-        t += 1
-        # simple animation + FPS text
-        screen.fill(((t // 2) % 255, 40, 90))
-        txt = font.render(f"Ticks: {t}  FPS: {int(clock.get_fps())}", True, (255, 255, 255))
-        screen.blit(txt, (20, 20))
+        # If this is running, you will see a solid RED screen
+        screen.fill((255, 0, 0))
         pygame.display.flip()
-        clock.tick(60)
+
         # CRUCIAL on web: yield each frame
         await asyncio.sleep(0)
 
