@@ -51,14 +51,9 @@ pip install pygame
 - Game over when the snake collides with the wall or itself.
 
 ## Screenshot
-You can showcase the game by adding a screenshot.  
-Place your screenshot image in the project root or inside the `assets/` folder, then link it here:
 
 ```markdown
 ![Snake Game Screenshot](assets/screenshot.jpg)
 ```
-
-(Replace `assets/screenshot.png` with the path to your actual screenshot file.)
-
 ## License
 This project is provided for educational and personal use.
