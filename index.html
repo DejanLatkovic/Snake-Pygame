@@ -1,27 +1,35 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Wormy (pygame-web)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
   <style>
-    html, body { margin: 0; height: 100%; background: #888; }
-    #canvas { display:block; margin:0 auto; outline:none; }
+    html,body{margin:0;height:100%;background:#1e1e1e;}
+    /* canvas is created by pygbag; background stays hidden behind it */
   </style>
+
+  <!-- pygbag runtime config -->
   <script>
-    // Pygbag runtime config (0.9 CDN)
     window.pygbag = {
       cdn: "https://pygame-web.github.io/archives/0.9/",
-      ume_block: 1,   // don't auto-open console window
-      can_close: 0,   // hide close dialog
-      audio: 0,       // hard-disable audio (avoids gesture gate)
-      xtermjs: 1,     // show runtime logs in browser console
-      gui_debug: 3,   // verbose logs
+      ume_block: 1,     // don't auto-open the console
+      can_close: 0,     // don't show the close dialog
+      audio: 0,         // hard-disable audio (no user-gesture gate)
+      xtermjs: 1,       // keep logs available (F12)
+      gui_debug: 2      // some logs; set 0 to be quiet once working
     };
   </script>
+
+  <!-- pygbag loader (will auto-run main.py at repo root) -->
+  <script src="https://pygame-web.github.io/archives/0.9/pythons.js"></script>
 </head>
 <body>
-  <canvas id="canvas" class="emscripten" oncontextmenu="event.preventDefault()" tabindex="1"></canvas>
-  <script src="https://pygame-web.github.io/archives/0.9/pythons.js"></script>
+  <noscript>
+    <p style="color:#fff;padding:1rem;font-family:system-ui;">
+      This page needs JavaScript to run pygame in the browser.
+    </p>
+  </noscript>
 </body>
 </html>
