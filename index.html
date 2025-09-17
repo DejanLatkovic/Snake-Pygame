@@ -2,30 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Wormy (pygbag)</title>
   <style>
-    html,body{margin:0;height:100%;background:#7f7f7f;}
-    #canvas{display:block;margin:auto;outline:none;}
+    html, body { height: 100%; margin: 0; background:#7f7f7f; }
+    #canvas { width: 100%; height: 100%; display: block; background:#000; }
   </style>
 
-  <!-- Configure pygbag (use the 0.9 CDN and disable audio/popups) -->
+  <!-- Tell pygbag what to do BEFORE loading pythons.js -->
   <script>
+    // pygbag runtime configuration
     window.pygbag = {
       cdn: "https://pygame-web.github.io/archives/0.9/",
-      ume_block: 1, // do not auto-open the console window
-      can_close: 0,
-      audio: 0     // important: no audio, avoids user-gesture gate
+      ume_block: 1,         // avoid popup
+      can_close: 0,         // don't show close dialog
+      audio: 0,             // hard-disable audio (no gesture required)
+      xtermjs: 1,           // get helpful logs in the browser console
+      gui_debug: 3
     };
   </script>
-
-  <!-- Loader (the only script you need) -->
-  <script src="https://pygame-web.github.io/archives/0.9/pythons.js"></script>
 </head>
 <body>
-  <canvas id="canvas" tabindex="1"></canvas>
+  <canvas id="canvas" class="emscripten" tabindex="1"></canvas>
 
-  <!-- Your game -->
-  <script type="text/python" id="__main__" src="main.py"></script>
+  <!-- IMPORTANT: data-python tells pygbag which script to run -->
+  <script
+    defer
+    src="https://pygame-web.github.io/archives/0.9/pythons.js"
+    data-python="main.py">
+  </script>
 </body>
 </html>
